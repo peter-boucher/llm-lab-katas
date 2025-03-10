@@ -1,0 +1,3 @@
+[submodule "1-entry-assignment"]
+	path = 1-entry-assignment
+	url = https://github.com/Maersk-Global/kiss-llm-lab-assignment-BPE106
