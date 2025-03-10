@@ -37,7 +37,7 @@ messages = [
 response = client.beta.chat.completions.parse(
     model=azure_openai_model,
     messages=messages,
-    response_format=schema
+    response_format=SQLGeneration
 )
 
 parsed_json = response.choices[0].message.parsed
