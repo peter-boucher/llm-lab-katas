@@ -9,7 +9,7 @@ from llm_client import LLMClient
 llm_client = LLMClient()
 
 logger = logging.getLogger(__name__)
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+logging.basicConfig(level=logging.ERROR, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 
 class SQLGeneration(BaseModel):
     steps: list[str] = Field(..., description="Short chain-of-thought steps explaining the logic")
@@ -29,7 +29,7 @@ def build_prompt(question):
     messages.append(
         {"role": "user", "content": question}
     )
-    print(messages)
+    logger.info(f"Constructed prompt: {messages}")
     return messages
 
 def completion(messages):
@@ -57,8 +57,12 @@ def answer_question(question):
     response = completion(build_prompt(question))
     logger.info(f"Response: {response}")
     parsed_json = response.choices[0].message.parsed
-    output = data.execute_sql_query(parsed_json.sql_query)
-    return output
+    try:
+        return data.execute_sql_query(parsed_json.sql_query)
+    except Exception as e:
+        logger.info(f"Trying to recover by generating a fix for the query causing an error")
+        improved_sql = generate_fix(e, parsed_json.sql_query, question)
+        return data.execute_sql_query(improved_sql)
 
 if __name__ == "__main__":
     answer = answer_question(question = "Which product category has the shortest average delivery time? [string: category_name]")

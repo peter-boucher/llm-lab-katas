@@ -17,11 +17,11 @@ class Olist:
     
     def execute_sql_query(self, query, iteration=0):
         if not isinstance(query, str):
-            self.logger.error("Query must be a string, found", query.instance())
+            self.logger.error("Query must be a string, found", query.__class__)
             raise ValueError("Query must be a string")
         elif iteration > 3:
-            self.logger.error("Iteration limit reached")
-            raise ValueError("Iteration limit reached")
+            self.logger.error("Iteration limit exeeded: ", iteration)
+            raise ValueError("Iteration limit exeeded")
         
         try:
             conn = self.connect_data()
@@ -29,5 +29,6 @@ class Olist:
             result = pd.read_sql_query(query, conn)
             return result
         except Exception as e:
+            #TODO: catch sqlaclchemy.exc.ProgrammingError, sqlalchemy.exc.OperationalError
             self.logger.error(f"An error occurred: {e}")
             raise e
