@@ -1,24 +1,14 @@
 from pathlib import Path
 from pydantic import BaseModel, Field
-from openai import AzureOpenAI
 import dotenv
 import os
 import logging
 
 from db_client import Olist
 from sample_db_queries import examples
+from llm_client import LLMClient
 
-dotenv.load_dotenv("../.env")
-azure_endpoint = os.getenv("AZURE_OPENAI_ENDPOINT")
-openai_api_key = os.getenv("OPENAI_API_KEY")
-azure_openai_api_version = os.getenv("AZURE_OPENAI_API_VERSION")
-azure_openai_model = os.getenv("AZURE_OPENAI_DEPLOYMENT")
-
-client = AzureOpenAI(
-    azure_endpoint=azure_endpoint,
-    api_key=openai_api_key,
-    api_version=azure_openai_api_version
-)
+llm_client = LLMClient()
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
@@ -40,10 +30,6 @@ def setup():
     global data
     data = Olist()
 
-def set_question(input):
-    global question
-    question = input
-
 def build_prompt(question):
     context = get_context()
     messages = [
@@ -58,9 +44,7 @@ def build_prompt(question):
     return messages
 
 def completion(messages):
-    logger.info(f"Sending query to LLM: {messages}")
-    response = client.beta.chat.completions.parse(
-        model=azure_openai_model,
+    response = llm_client.chat_completion(
         messages=messages,
         response_format=SQLGeneration
     )
@@ -79,7 +63,7 @@ def get_context():
     context = Path('../1-entry-assignment/context_prompt.md').read_text()
     return context
 
-def answer_question():
+def answer_question(question):
     setup()
     response = completion(build_prompt(question))
     parsed_json = response.choices[0].message.parsed
@@ -87,19 +71,16 @@ def answer_question():
     return output
 
 if __name__ == "__main__":
-    data = Olist()
-    question = "Which product category has the shortest average delivery time? [string: category_name]"
-    response = completion(build_prompt(question))
-    parsed_json = response.choices[0].message.parsed
-    print(parsed_json)
+    answer = answer_question(question = "Which product category has the shortest average delivery time? [string: category_name]")
+    print(answer)
     # => {"steps": ["Join reviews, filter...","Compute average score..."], "sql_query":"SELECT p.product_category_name ..."}
     # print(response.model_dump_json(indent=2))
-    try:
-       iteration = 0
-       output = data.execute_sql_query(parsed_json.sql_query)
-    except Exception as e:
-        improved_sql = generate_fix(e, parsed_json.sql_query, question)
-        improved_sql_json = improved_sql.choices[0].message.parsed
-        output = data.execute_sql_query(improved_sql_json.sql_query, iteration+1)
+    # try:
+    #    iteration = 0
+    #    output = data.execute_sql_query(parsed_json.sql_query)
+    # except Exception as e:
+    #     improved_sql = generate_fix(e, parsed_json.sql_query, question)
+    #     improved_sql_json = improved_sql.choices[0].message.parsed
+    #     output = data.execute_sql_query(improved_sql_json.sql_query, iteration+1)
                 
-    print(output)
+    # print(output)
