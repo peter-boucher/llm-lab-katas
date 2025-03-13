@@ -15,10 +15,14 @@ class Olist:
         db_connection = sqlite3.connect(self.db_path)
         return db_connection
     
-    def execute_sql_query(self, query, prompt='', iteration=0):
+    def execute_sql_query(self, query, iteration=0):
         if not isinstance(query, str):
             self.logger.error("Query must be a string, found", query.instance())
             raise ValueError("Query must be a string")
+        elif iteration > 3:
+            self.logger.error("Iteration limit reached")
+            raise ValueError("Iteration limit reached")
+        
         try:
             conn = self.connect_data()
             self.logger.info(f"Executing SQL query:\n{query}")
@@ -26,10 +30,4 @@ class Olist:
             return result
         except Exception as e:
             self.logger.error(f"An error occurred: {e}")
-            if iteration > 3:
-                improved_sql = generate_fix(e, query, prompt)
-                extracted_sql = extract_sql(improved_sql['choices'][0]['message']['content'])
-                return self.execute_sql_query(extracted_sql, iteration+1)
-            else:
-                self.logger.error(f"Maximum fix attempts reached")
-                raise e
+            raise e

@@ -6,6 +6,7 @@ import os
 import logging
 
 from db_client import Olist
+from sample_db_queries import examples
 
 dotenv.load_dotenv("../.env")
 azure_endpoint = os.getenv("AZURE_OPENAI_ENDPOINT")
@@ -35,13 +36,25 @@ class SQLGeneration(BaseModel):
 #     }
 # }
 
+def setup():
+    global data
+    data = Olist()
+
+def set_question(input):
+    global question
+    question = input
+
 def build_prompt(question):
-    context = Path('../1-entry-assignment/context_prompt.md').read_text()
+    context = get_context()
     messages = [
         {"role": "system", "content": context},
-        {"role": "system", "content": "You are an expert in Olist's DB. Provide 1-3 short reasoning steps, then a final SQL."},
-        {"role": "user", "content": question}
+        {"role": "system", "content": "You are an expert in Olist's DB. Provide 1-3 short reasoning steps, then a final SQL."}
     ]
+    list(map(lambda example: list(map(lambda message: messages.append(message), example)), examples))
+    messages.append(
+        {"role": "user", "content": question}
+    )
+    print(messages)
     return messages
 
 def completion(messages):
@@ -54,7 +67,7 @@ def completion(messages):
     return response
 
 def generate_fix(error, last_query='', original_prompt=''):
-    context = Path('context_prompt.md').read_text()
+    context = get_context()
     messages = [{"role": "system", "content": context},
                 {"role": "user", "content": original_prompt},
                 {"role": "assistant", "content": last_query},         
@@ -62,12 +75,31 @@ def generate_fix(error, last_query='', original_prompt=''):
                   + str(error) + "\nPlease change the SQL query to fix the error. Provide 1-3 short reasoning steps, then a final SQL."}]
     return completion(messages)
 
+def get_context():
+    context = Path('../1-entry-assignment/context_prompt.md').read_text()
+    return context
+
+def answer_question():
+    setup()
+    response = completion(build_prompt(question))
+    parsed_json = response.choices[0].message.parsed
+    output = data.execute_sql_query(parsed_json.sql_query)
+    return output
+
 if __name__ == "__main__":
     data = Olist()
-    response = completion(build_prompt("Is there a correlation between review score and order value?"))
+    question = "Which product category has the shortest average delivery time? [string: category_name]"
+    response = completion(build_prompt(question))
     parsed_json = response.choices[0].message.parsed
     print(parsed_json)
     # => {"steps": ["Join reviews, filter...","Compute average score..."], "sql_query":"SELECT p.product_category_name ..."}
     # print(response.model_dump_json(indent=2))
-    output = data.execute_sql_query(parsed_json.sql_query)
+    try:
+       iteration = 0
+       output = data.execute_sql_query(parsed_json.sql_query)
+    except Exception as e:
+        improved_sql = generate_fix(e, parsed_json.sql_query, question)
+        improved_sql_json = improved_sql.choices[0].message.parsed
+        output = data.execute_sql_query(improved_sql_json.sql_query, iteration+1)
+                
     print(output)
