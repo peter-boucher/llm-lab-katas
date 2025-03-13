@@ -1,7 +1,5 @@
 from pathlib import Path
 from pydantic import BaseModel, Field
-import dotenv
-import os
 import logging
 
 from db_client import Olist
@@ -16,15 +14,6 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(level
 class SQLGeneration(BaseModel):
     steps: list[str] = Field(..., description="Short chain-of-thought steps explaining the logic")
     sql_query: str = Field(..., description="The final SQL query to answer the user request")
-
-# schema = {
-#     "type": "json_schema",
-#     "json_schema": {
-#         "name": "SQLGeneration",
-#         "strict": True,
-#         "schema": SQLGeneration.model_json_schema()
-#     }
-# }
 
 def setup():
     global data
@@ -66,6 +55,7 @@ def get_context():
 def answer_question(question):
     setup()
     response = completion(build_prompt(question))
+    logger.info(f"Response: {response}")
     parsed_json = response.choices[0].message.parsed
     output = data.execute_sql_query(parsed_json.sql_query)
     return output
