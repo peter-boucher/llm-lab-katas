@@ -27,10 +27,22 @@ class LLMClient:
             api_version=self.API_VER
         )
 
-    def chat_completion(self, messages, response_format):
+    def chat_completion_parsed(self, messages, response_format):
         self.logger.info(f"Sending query to LLM: {messages}")
         try:
             return self.client.beta.chat.completions.parse(
+                model=self.MODEL,
+                messages=messages,
+                response_format=response_format
+            )
+        except Exception as e:
+            self.logger.error(f"An error occurred: {e}")
+            raise e
+
+    def chat_completion(self, messages, response_format):
+        self.logger.info(f"Sending query to LLM: {messages}")
+        try:
+            return self.client.chat.completions.create(
                 model=self.MODEL,
                 messages=messages,
                 response_format=response_format
