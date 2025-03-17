@@ -10,7 +10,12 @@ from llm_client import LLMClient
 llm_client = LLMClient()
 
 logger = logging.getLogger(__name__)
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+logging.basicConfig(
+    level=logging.INFO, 
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    filename='logs/app.log',
+    filemode='w'
+)
 
 class SQLGeneration(BaseModel):
     steps: list[str] = Field(..., description="Short chain-of-thought steps explaining the logic")
