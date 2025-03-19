@@ -27,6 +27,8 @@ class Olist:
             conn = self.connect_data()
             self.logger.info(f"Executing SQL query:\n{query}")
             result = pd.read_sql_query(query, conn)
+            self.logger.info(f"Query executed successfully")
+            self.logger.info(f"Result: {result}")
             return result
         except Exception as e:
             #TODO: catch sqlaclchemy.exc.ProgrammingError, sqlalchemy.exc.OperationalError

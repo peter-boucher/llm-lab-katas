@@ -118,3 +118,4 @@ if __name__ == "__main__":
     # last_query = "SELECT * FROM orderers WHERE order_status = 'delivered'"
     # print(data.execute_sql_query(last_query))
     # print(output)
+    print(llm_client.chat_history)
