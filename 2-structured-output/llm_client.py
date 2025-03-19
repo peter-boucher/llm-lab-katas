@@ -30,11 +30,15 @@ class LLMClient:
     def chat_completion_parsed(self, messages, response_format):
         self.logger.info(f"Sending query to LLM: {messages}")
         try:
-            return self.client.beta.chat.completions.parse(
+            response = self.client.beta.chat.completions.parse(
                 model=self.MODEL,
                 messages=messages,
                 response_format=response_format
             )
+            self.logger.info(f"Response: {response}")
+            for step in response.choices[0].message.parsed.steps:
+                self.logger.info(f"REASONING - Step: {step}")
+            return response
         except Exception as e:
             self.logger.error(f"An error occurred: {e}")
             raise e
@@ -42,11 +46,12 @@ class LLMClient:
     def chat_completion(self, messages, response_format):
         self.logger.info(f"Sending query to LLM: {messages}")
         try:
-            return self.client.chat.completions.create(
+            response = self.client.chat.completions.create(
                 model=self.MODEL,
                 messages=messages,
                 response_format=response_format
             )
+            self.logger.info(f"Response: {response}")
         except Exception as e:
             self.logger.error(f"An error occurred: {e}")
             raise e
