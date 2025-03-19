@@ -61,14 +61,13 @@ def get_context():
 def answer_question(question):
     setup()
     response = completion(build_prompt(question))
-    logger.info(f"Response: {response}")
     parsed_json = response.choices[0].message.parsed
     try:
         return data.execute_sql_query(parsed_json.sql_query)
     except Exception as e:
         logger.info(f"Trying to recover by generating a fix for the query causing an error")
         improved_sql = generate_fix(e, parsed_json.sql_query, question)
-        return data.execute_sql_query(improved_sql, iteration=1)
+        return data.execute_sql_query(improved_sql.choices[0].message.parsed.sql_query, iteration=1)
     
 def evaluate_sql(generated_sql, correct_sql, query_description):
     """Evaluate the generated SQL against the correct SQL using an LLM"""
@@ -99,9 +98,9 @@ def evaluate_sql(generated_sql, correct_sql, query_description):
 
 if __name__ == "__main__":
     setup()
-    # query_description = 'What is the correlation between review score and order value?'
-    # answer = answer_question(query_description)
-    # print(answer)
+    query_description = 'What is the correlation between review score and order value?'
+    answer = answer_question(query_description)
+    print(answer)
     # generated = 'SELECT ROUND((AVG(r.review_score * ov.order_value) - AVG(r.review_score) * AVG(ov.order_value)) / (STDEV(r.review_score) * STDEV(ov.order_value)), 2) AS correlation\nFROM (\n    SELECT order_id, SUM(price + freight_value) AS order_value\n    FROM order_items\n    GROUP BY order_id\n) ov\nJOIN order_reviews r ON ov.order_id = r.order_id;'
     # correct = 'WITH order_values AS (\n    SELECT order_id, SUM(price + freight_value) AS order_value\n    FROM order_items\n    GROUP BY order_id\n)\nSELECT r.review_score,\n       ROUND(AVG(ov.order_value), 2) AS avg_order_value\nFROM order_reviews r\nJOIN order_values ov ON r.order_id = ov.order_id\nGROUP BY r.review_score\nORDER BY r.review_score;'
     # print(data.execute_sql_query(correct))
@@ -116,6 +115,6 @@ if __name__ == "__main__":
     #     improved_sql = generate_fix(e, parsed_json.sql_query, question)
     #     improved_sql_json = improved_sql.choices[0].message.parsed
     #     output = data.execute_sql_query(improved_sql_json.sql_query, iteration+1)
-    last_query = "SELECT * FROM orderers WHERE order_status = 'delivered'"
-    print(data.execute_sql_query(last_query))
+    # last_query = "SELECT * FROM orderers WHERE order_status = 'delivered'"
+    # print(data.execute_sql_query(last_query))
     # print(output)
