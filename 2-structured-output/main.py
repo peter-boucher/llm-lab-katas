@@ -4,18 +4,26 @@ from pydantic import BaseModel, Field
 import logging
 
 from db_client import Olist
-from sample_db_queries import examples
 from llm_client import LLMClient
+from sample_db_queries import examples
 
 llm_client = LLMClient()
 
 logger = logging.getLogger(__name__)
-logging.basicConfig(
-    level=logging.INFO, 
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-    filename='logs/app.log',
-    filemode='w'
-)
+try:
+    logging.basicConfig(
+        level=logging.INFO, 
+        format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+        filename='logs/app.log',
+        filemode='w'
+    )
+except FileNotFoundError as e:
+    logger.error(f"Couldn't find a logfile: {e}")
+    logging.basicConfig(
+        level=logging.INFO, 
+        format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    )
+
 
 class SQLGeneration(BaseModel):
     steps: list[str] = Field(..., description="Short chain-of-thought steps explaining the logic")
@@ -59,7 +67,7 @@ def get_context():
     return context
 
 def answer_question(question):
-    setup()
+    # setup()
     response = completion(build_prompt(question))
     parsed_json = response.choices[0].message.parsed
     try:
@@ -98,9 +106,11 @@ def evaluate_sql(generated_sql, correct_sql, query_description):
 
 if __name__ == "__main__":
     setup()
-    query_description = 'What is the correlation between review score and order value?'
+    query_description = 'What is the correlation between review score and customer city?'
     answer = answer_question(query_description)
+    answer2 = answer_question('What about by country?')
     print(answer)
+    print(answer2)
     # generated = 'SELECT ROUND((AVG(r.review_score * ov.order_value) - AVG(r.review_score) * AVG(ov.order_value)) / (STDEV(r.review_score) * STDEV(ov.order_value)), 2) AS correlation\nFROM (\n    SELECT order_id, SUM(price + freight_value) AS order_value\n    FROM order_items\n    GROUP BY order_id\n) ov\nJOIN order_reviews r ON ov.order_id = r.order_id;'
     # correct = 'WITH order_values AS (\n    SELECT order_id, SUM(price + freight_value) AS order_value\n    FROM order_items\n    GROUP BY order_id\n)\nSELECT r.review_score,\n       ROUND(AVG(ov.order_value), 2) AS avg_order_value\nFROM order_reviews r\nJOIN order_values ov ON r.order_id = ov.order_id\nGROUP BY r.review_score\nORDER BY r.review_score;'
     # print(data.execute_sql_query(correct))
@@ -118,4 +128,4 @@ if __name__ == "__main__":
     # last_query = "SELECT * FROM orderers WHERE order_status = 'delivered'"
     # print(data.execute_sql_query(last_query))
     # print(output)
-    print(llm_client.chat_history)
+    # print(llm_client.chat_history)
