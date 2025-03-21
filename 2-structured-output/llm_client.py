@@ -3,6 +3,7 @@ import time
 from openai import AzureOpenAI
 import os
 import dotenv
+from pydantic import BaseModel, Field
 
 class LLMClient:
     dotenv.load_dotenv("../.env")
@@ -32,7 +33,15 @@ class LLMClient:
     def add_chat_history(self, messages):
         self.chat_history.append({'timestamp': time.time(), 'conversation': messages})
 
-    def chat_completion_parsed(self, messages, response_format):
+    def chat_completion_parsed(self, messages, response_format, include_history=True):
+        if include_history:
+            for item in self.chat_history:
+                if not isinstance(item['conversation'], list):
+                    messages.append(item['conversation'])
+                else:
+                    for message in item['conversation']:
+                       if 'role' in message and message['role'] != 'system': # Add only the user and assistant messages
+                        messages.append(message)
         self.logger.info(f"Sending query to LLM: {messages}")
         try:
             response = self.client.beta.chat.completions.parse(
@@ -44,7 +53,7 @@ class LLMClient:
             self.add_chat_history(messages)
             self.add_chat_history(response.choices[0].message)
             for step in response.choices[0].message.parsed.steps:
-                self.logger.info(f"REASONING - Step: {step}")
+                self.logger.info(f"REASONING - Step: {step}") #TODO: client doesn't know about sturcture of response_format
             return response
         except Exception as e:
             self.logger.error(f"An error occurred: {e}")
@@ -65,3 +74,21 @@ class LLMClient:
         except Exception as e:
             self.logger.error(f"An error occurred: {e}")
             raise e
+
+if __name__ == "__main__":
+    # class SQLGeneration(BaseModel):
+    #     # role: str = Field(..., description="The role of the message")
+    #     steps: list[str] = Field(..., description="Short chain-of-thought steps explaining the logic")
+    #     sql_query: str = Field(..., description="The final SQL query to answer the user request")
+
+    # client = LLMClient()
+    # messages = [
+    #     {"role": "system", "content": "You are an expert in Olist's DB. Provide 1-3 short reasoning steps, then a final SQL."},
+    #     {"role": "user", "content": "Which seller has delivered the most orders to customers in Rio de Janeiro?"}
+    # ]
+    # response = client.chat_completion_parsed(messages, SQLGeneration)
+    # messages = [
+    #     {"role": "user", "content": "How many orders did they deliver to customers in Rio de Janeiro?"}
+    # ]
+    # response = client.chat_completion_parsed(messages, SQLGeneration)
+    pass
