@@ -49,7 +49,8 @@ def build_prompt(question):
 def completion(messages):
     response = llm_client.chat_completion_parsed(
         messages=messages,
-        response_format=SQLGeneration
+        response_format=SQLGeneration,
+        include_history=True
     )
     return response
 
