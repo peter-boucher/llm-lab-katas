@@ -52,13 +52,13 @@ def test_chat_completion_followup_history(prompt_messages):
 
     response = client.chat_completion(messages, mock_response_format)
     response = client.chat_completion(followup_messages, mock_response_format)
-    assert len(client.chat_history) > 1
+    assert len(client.chat_history) > 2
 
 @pytest.mark.vcr()
 def test_chat_completion_parsed():
     messages = [{"role": "system", "content": "You are an expert in Olist's DB. Provide 1-3 short reasoning steps, then a final SQL."},
     {"role": "user", "content": "Which seller has delivered the most orders to customers in Rio de Janeiro?"}]
-    response = client.chat_completion_parsed(messages, MockSQLGeneration)
+    response = client.chat_completion(messages, MockSQLGeneration, parsed=True)
     assert "SELECT" in response.choices[0].message.parsed.sql_query
 
 def test_recall_chat_history():

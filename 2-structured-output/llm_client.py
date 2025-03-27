@@ -32,29 +32,7 @@ class LLMClient:
 
     def add_chat_history(self, messages):
         self.chat_history.append({'timestamp': time.time(), 'conversation': messages})
-
-    def chat_completion_parsed(self, messages, response_format, include_history=True):
-        if include_history:
-            if len(self.chat_history) > 0:
-                history = self.recall_chat_history()
-                messages = history + messages
-        self.logger.info(f"Sending query to LLM: {messages}")
-        try:
-            response = self.client.beta.chat.completions.parse(
-                model=self.MODEL,
-                messages=messages,
-                response_format=response_format
-            )
-            self.logger.info(f"Response: {response}")
-            self.add_chat_history(messages)
-            self.add_chat_history(response.choices[0].message)
-            for step in response.choices[0].message.parsed.steps:
-                self.logger.info(f"REASONING - Step: {step}") #TODO: client doesn't know about sturcture of response_format
-            return response
-        except Exception as e:
-            self.logger.error(f"An error occurred: {e}")
-            raise e
-
+    
     def recall_chat_history(self):
         messages = []
         for item in self.chat_history:
@@ -66,21 +44,31 @@ class LLMClient:
                         messages.append(message)
         return messages
 
-    def chat_completion(self, messages, response_format, include_history=True):
-        if include_history:
-            if len(self.chat_history) > 0:
-                history = self.recall_chat_history()
-                messages = history + messages
+    def chat_completion(self, messages, response_format, include_history=True, parsed=False):
+        if include_history and len(self.chat_history) > 0:
+            history = self.recall_chat_history()
+            messages = history + messages
         self.logger.info(f"Sending query to LLM: {messages}")
         try:
-            response = self.client.chat.completions.create(
-                model=self.MODEL,
-                messages=messages,
-                response_format=response_format
-            )
+            if parsed:
+                response = self.client.beta.chat.completions.parse(
+                    model=self.MODEL,
+                    messages=messages,
+                    response_format=response_format
+                )
+            else:
+                response = self.client.chat.completions.create(
+                    model=self.MODEL,
+                    messages=messages,
+                    response_format=response_format
+                )
             self.logger.info(f"Response: {response}")
+            self.logger.info(f"Used tokens: {response.usage}")
             self.add_chat_history(messages)
             self.add_chat_history(response.choices[0].message)
+            if parsed:
+                for step in response.choices[0].message.parsed.steps:
+                    self.logger.info(f"REASONING - Step: {step}")
             return response
         except Exception as e:
             self.logger.error(f"An error occurred: {e}")
