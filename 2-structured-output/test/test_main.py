@@ -2,9 +2,10 @@ import pytest
 
 import main
 
-def test_setup():
+@pytest.fixture(autouse=True)
+def before_and_after_each():
     main.setup()
-    assert main.data is not None
+    yield
 
 def test_build_prompt():
     question = "Which seller has delivered the most orders to customers in Rio de Janeiro? [string: seller_id]"
@@ -30,6 +31,7 @@ def test_get_context():
     result = main.get_context()
     assert "dataset from Olist Store" in result
 
+@pytest.mark.vcr()
 def test_evaluate_answer_question():
     question = "Which seller has delivered the most orders to customers in Rio de Janeiro? [string: seller_id]"
     result = main.answer_question(question)
