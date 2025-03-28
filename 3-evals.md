@@ -219,7 +219,7 @@ Now it’s your turn to put this into action. This week’s assignment is all ab
 
 ### **References and Further Reading**
 
-1. **OpenAI Evals (Framework)** – _Open-source library for evaluating LLMs and LLM-based systems._ GitHub repo: [openai/evals ](https://github.com/openai/evals). Intro blog and guide: [OpenAI Evals – Getting Started ](https://cookbook.openai.com/docs/getting-started-with-evals).
+1. **OpenAI Evals (Framework)** – _Open-source library for evaluating LLMs and LLM-based systems._ GitHub repo: [openai/evals ](https://github.com/openai/evals). Intro blog and guide: [OpenAI Evals – Getting Started ](https://cookbook.openai.com/examples/evaluation/getting_started_with_openai_evals).
 
 2. **DeepEval (Confident AI)** – _“Pytest for LLMs” – a framework to unit test LLM outputs._ Introduction: [DeepEval Overview](https://github.com/confident-ai/deepeval). Useful for setting up metrics like G-Eval, hallucination detection, etc., with minimal fuss.
 
@@ -229,7 +229,7 @@ Now it’s your turn to put this into action. This week’s assignment is all ab
 
 5. **W&B (Weights & Biases) – Evaluating LLMs** – _Techniques and best practices for LLM evals._ (See W&B’s article on [LLM Evaluations: Metrics & Best Practices](https://wandb.ai/onlineinference/genai-research/reports/LLM-evaluations-Metrics-frameworks-and-best-practices--VmlldzoxMTMxNjQ4NA) and how to use their tooling for tracking eval results).
 
-6. **Langfuse – LLM Evaluation 101** – _Blog post on offline vs online evaluation and proven techniques._ [LLM Evaluation 101 (Langfuse)](https://langfuse.com/blog/llm-evaluation-101) – useful to understand evaluation in production environments.
+6. **Langfuse – LLM Evaluation 101** – _Blog post on offline vs online evaluation and proven techniques._ [LLM Evaluation 101 (Langfuse)](https://langfuse.com/blog/2025-03-04-llm-evaluation-101-best-practices-and-challenges) – useful to understand evaluation in production environments.
 
 7. **Tanner McRae’s Evaluation Best Practices** – _Medium article on LLM system eval lifecycle._ Emphasizes building custom eval sets (start with ~100 examples, evolve over time). [Evaluating LLM Systems (Medium)](https://medium.com/@tannermcrae/evaluating-llm-systems-best-practices-1bd8e5ac2531).
 
