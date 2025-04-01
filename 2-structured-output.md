@@ -495,7 +495,6 @@ print(completion.choices[0].message.parsed.sql_query)
 
 With this instrumentation, you’ll see detailed traces of each API request in your console (which you could also forward to your logging system).
 
----
 
 ## Practical Assignment: Enhance Your Prompt-to-SQL Pipeline
 
@@ -516,7 +515,6 @@ With this instrumentation, you’ll see detailed traces of each API request in y
 
 **Remember:** The best results come from iterating on your few-shot examples and refining your schema fields to fit your real data needs.
 
----
 
 ## References
 

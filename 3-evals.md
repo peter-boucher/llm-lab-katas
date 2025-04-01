@@ -245,4 +245,6 @@ In the next lesson, we’ll venture into the wild world of unstructured output e
 
 **Happy Evaluating & Keep Building!**
 
+---
+
 ❤️ **LLM LAB – 2025**
