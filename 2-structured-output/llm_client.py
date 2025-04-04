@@ -1,3 +1,4 @@
+import json
 import logging
 import time
 from openai import AzureOpenAI
@@ -51,6 +52,7 @@ class LLMClient:
         self.logger.info(f"Sending query to LLM: {messages}")
         try:
             if parsed:
+                #FIXME self.logger.info(f"Using structured output: {response_format.sql_query}")
                 response = self.client.beta.chat.completions.parse(
                     model=self.MODEL,
                     messages=messages,
@@ -75,11 +77,7 @@ class LLMClient:
             raise e
 
 if __name__ == "__main__":
-    class SQLGeneration(BaseModel):
-        # role: str = Field(..., description="The role of the message")
-        steps: list[str] = Field(..., description="Short chain-of-thought steps explaining the logic")
-        sql_query: str = Field(..., description="The final SQL query to answer the user request")
-
+    from main import SQLGeneration
     client = LLMClient()
     messages = [
         {"role": "system", "content": "You are an expert in Olist's DB. Provide 1-3 short reasoning steps, then a final SQL."},
