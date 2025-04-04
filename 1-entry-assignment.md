@@ -1,107 +1,96 @@
-# KISS ❤️ LLM LAB Entry Assignment
+# ❤️ LLM LAB Entry Assignment
 
 ## Building a Simple LLM-to-SQL Pipeline
 
 ### Objective:
-Create a script that demonstrates your ability to work with LLMs and databases by building a basic prompt-to-query pipeline.
+Create a script that demonstrates your ability to integrate LLMs with databases by building a simple, yet robust, prompt-to-query pipeline.
 
 ### Database:
-[SQLite database](https://www.kaggle.com/datasets/terencicp/e-commerce-dataset-by-olist-as-an-sqlite-database/data) (provided on Feb 14, 2025)
+[SQLite database](https://www.kaggle.com/datasets/terencicp/e-commerce-dataset-by-olist-as-an-sqlite-database/data) provided on ❤️ Valentine's Day (Feb 14, 2025)
 
 ### Resources:
-You can use either:
-- Any LLM and any coding language you prefer
-- [OpenAI GPT-4](https://platform.openai.com/docs/overview) (free $18 - I recommend to use this one)
+You may use:
+- Any LLM and coding language you prefer
+- [OpenAI GPT-4](https://platform.openai.com/docs/overview) (recommended; free $18 credit available)
 - [Google AI Studio](https://aistudio.google.com/welcome) (free $20 credit available with personal Google account)
-- [Anthropic API Claude models](https://docs.anthropic.com/en/docs/initial-setup) (free $8 per month on `Free Tier`)
+- [Anthropic Claude](https://docs.anthropic.com/en/docs/initial-setup) (free $8 monthly credit)
 
-🤖 Pro Tip: For any unclear details - feed this assignment into ChatGPT or Claude and ask it.
-They'll be happy to explain everything in detail!
+> [!TIP]
+> For any unclear details, feed this assignment into ChatGPT or Claude. They’ll gladly explain everything in detail!
 
-**Note:** All data used in this assignment is from open sources and can be shared freely.
+> [!NOTE]
+> All data used in this assignment comes from open sources and can be shared freely.
 
 ### Technical Requirements:
-- Just KISS it.
-    - Keep code under 100 lines in Python (excluding prompts and tests)
-    - It can be bigger for other bloated languages
+- Keep it simple.
+    - Python code can fit into one file (excluding prompts and tests)
+    - Other languages: reasonable length accepted
 - Must include unit tests
-- Must handle basic error cases
-- Must use proper logging
-- Any language you like and can run locally
+- Must handle basic errors
+- Must use clear logging
+- Choose any language executable locally (Typescript, Python, Go, Java, etc.)
 
 ### Core Questions to Answer (to be extended):
-1. What is the accuracy of LLM-generated SQL queries compared to human-written ones in the database?
-2. Which types of questions result in the highest/lowest accuracy? Provide examples.
-3. How would you implement a safety check for potentially harmful SQL queries?
-4. What metrics would you use to evaluate the quality of generated SQL queries?
-5. How would you handle edge cases like:
-    - Infinite recursion in query generation
-    - Malicious queries attempting to modify database structure
+- What is the accuracy of LLM-generated SQL queries versus human-written queries?
+- Which question types yield highest/lowest accuracy? Provide examples.
+- How would you implement safety checks for harmful SQL queries?
+- What metrics would you use to evaluate SQL query quality?
+- How would you handle edge cases like:
+    - Infinite recursion during query generation
+    - Malicious attempts to alter database structure
     - Ambiguous natural language questions
 
-### Bonus Questions:
-6. How would you implement query caching to improve performance?
-7. What prompt engineering techniques could improve SQL generation accuracy?
-8. How would you implement a feedback loop to improve query generation over time?
+### Bonus Questions (optional):
+- How to implement query caching to boost performance?
+- Which prompt engineering techniques enhance SQL accuracy?
+- How would you implement feedback loops for query improvement?
 
 ### Evaluation Criteria:
-- Code quality and organization
+- Code quality and clarity
 - Test coverage
 - Error handling
 - Documentation
-- Analysis depth
+- Depth of analysis
 
-### Additional Requirements:
-- All code must be executable during the 15-minute code review session
-- Questions must be implemented as runnable test cases
-- Code should be organized to demonstrate functionality quickly
-- Language: Any IDE-supported language accepted
-- Include setup instructions if using non-standard dependencies
+### Submission Requirements:
+- All code must run during a 15-minute review
+- Questions implemented as runnable test cases
+- Clear organization for rapid demonstration
+- Any language supported by IDE is accepted
+- Provide setup instructions for non-standard dependencies
 
-### Submission Details:
+🗓️ **Deadline:** Sunday, February 23rd, 2025
 
-🗓️ Deadline: Sunday, February 23rd, 2025
-
-📋 Review Process:
-- 15-minute code review session will be scheduled
-- Be prepared to run and explain your code
-- Have your development environment ready for the review
+📋 **Review Process:**
+- Scheduled 15-minute code review
+- Prepare to run and discuss your code
+- Ensure development environment readiness
 
 ## Detailed Questions
-The LLM should be able to generate SQL queries to answer the following questions correctly:
+Generate accurate SQL queries addressing these questions:
 
 1. Which seller has delivered the most orders to customers in Rio de Janeiro? [string: seller_id]
-
 2. What's the average review score for products in the 'beleza_saude' category? [float: score]
-
 3. How many sellers have completed orders worth more than 100,000 BRL in total? [integer: count]
-
 4. Which product category has the highest rate of 5-star reviews? [string: category_name]
-
 5. What's the most common payment installment count for orders over 1000 BRL? [integer: installments]
-
 6. Which city has the highest average freight value per order? [string: city_name]
-
 7. What's the most expensive product category based on average price? [string: category_name]
-
 8. Which product category has the shortest average delivery time? [string: category_name]
-
 9. How many orders have items from multiple sellers? [integer: count]
-
 10. What percentage of orders are delivered before the estimated delivery date? [float: percentage]
 
-Your implementation should:
-- Generate accurate SQL queries for each question
-- Handle the data relationships correctly
-- Return results in the expected format
-- Include error handling for edge cases
-- Have proper unit tests for each question
+Implementation must:
+- Generate accurate SQL queries
+- Respect data relationships
+- Provide results in specified formats
+- Include robust error handling
+- Contain comprehensive unit tests (for each question)
 
 ## Dataset and Schema
-For this assignment we will use an open dataset [E-commerce dataset by Olist](https://www.kaggle.com/datasets/terencicp/e-commerce-dataset-by-olist-as-an-sqlite-database/data) from Kaggle.
+We use the open dataset [Olist E-commerce SQLite](https://www.kaggle.com/datasets/terencicp/e-commerce-dataset-by-olist-as-an-sqlite-database/data).
 
 ```mermaid
-
 erDiagram
     orders ||--o{ order_items : contains
     orders ||--o{ order_payments : has
@@ -190,9 +179,8 @@ erDiagram
 
 ## 💡 Pro Tip: Writing Effective LLM Prompts
 
-Modern LLMs work exceptionally well with structured markdown text! Here's a ready-to-use prompt template that you can feed directly to any LLM (just copy the content between the backticks):
-
-Feed this markdown-formatted prompt to LLM:
+> [!TIP]
+> Modern LLMs perform exceptionally with structured markdown! Feed structured markdown prompts to LLMs to clearly define context and format (simply copy the content below).
 
 ````markdown
 You are an expert in SQLite, Python and data analysis.
@@ -261,6 +249,7 @@ erDiagram
 ```
 ````
 
+
 ✨ Why markdown format works great with LLMs:
 1. 🎯 Clear structure that LLMs can parse easily
 2. 📚 Code blocks are properly formatted
@@ -268,7 +257,30 @@ erDiagram
 4. 🔑 Headers provide clear hierarchy
 5. 📊 Support for diagrams and charts
 
-Simply copy everything between the triple backticks and feed it to your favorite LLM - it will immediately understand the context and format!
+## Recommended Workflow:
+
+- **Define Clear Prompts:**
+  Use structured prompts clearly specifying the expected result type, ensuring that the generated SQL adheres strictly to the provided schema.
+
+- **Initial Exploration:**
+  Generate queries manually for the listed questions. Validate and test them thoroughly.
+
+- **Compare Queries:**
+  Generate corresponding queries with your chosen LLM. Compare accuracy and efficiency against human-generated queries.
+
+- **Unit Tests:**
+  Create unit tests for each question:
+    - Assert correct format (integer, float, string)
+    - Assert the output matches manually checked results (or ground truth)
+    - Refine the prompt to ensure stable results
+
+- **Logging:**
+  Implement clear logging (query, execution status, result snippet) to simplify debugging and evaluation.
+
+> [!NOTE]  
+> Start with a basic implementation, gradually add complexity, and clearly document your decisions and trade-offs. Evaluation accuracy are more important than complexity in this assignment.
+
+Enjoy building your first LLM-to-SQL pipeline! 🚀
 
 --- 
 ❤️ **LLM LAB – 2025**
