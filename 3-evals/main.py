@@ -2,16 +2,10 @@ import json
 from pathlib import Path
 from pydantic import BaseModel, Field
 import logging
-import sys
-from pathlib import Path
-
-# Add the parent directory to sys.path
-sys.path.append(str(Path(__file__).resolve().parent.parent / "2-structured-output"))
-
-from sample_db_queries import examples
 
 from db_client import Olist
 from llm_client import LLMClient
+from sample_db_queries import examples
 
 llm_client = LLMClient()
 
@@ -31,21 +25,12 @@ except FileNotFoundError as e:
     )
 
 
-class SQLGeneration(BaseModel):
-    steps: list[str] = Field(..., description="Short chain-of-thought steps explaining the logic")
-    sql_query: str = Field(..., description="The final SQL query to answer the user request")
-
 def setup():
     global data
     data = Olist()
 
 def build_prompt(question):
-    context = get_context()
-    messages = [
-        {"role": "system", "content": context},
-        {"role": "system", "content": "You are an expert in Olist's DB. Provide 1-3 short reasoning steps, then a final SQL."}
-    ]
-    list(map(lambda example: list(map(lambda message: messages.append(message), example)), examples))
+    messages = []
     messages.append(
         {"role": "user", "content": question}
     )
@@ -74,12 +59,24 @@ def get_context():
     context = Path('../1-entry-assignment/context_prompt.md').read_text()
     return context
 
+def get_examples():
+    output = []
+    for example in examples:
+        for message in example:
+            if message['role'] == 'assistant':
+                output.append(message['content'])
+    return output
+
 def answer_question(question):
-    # setup()
+    setup()
     response = completion(build_prompt(question))
     parsed_json = response.choices[0].message.parsed
     try:
-        return data.execute_sql_query(parsed_json.sql_query)
+        answer = data.execute_sql_query(parsed_json.sql_query)
+        if answer.empty:
+            logger.warning(f"Query returned an empty result set")
+            raise ValueError("Query returned an empty result set")
+        return answer
     except Exception as e:
         logger.info(f"Trying to recover by generating a fix for the query causing an error")
         improved_sql = generate_fix(e, parsed_json.sql_query, question)
@@ -112,13 +109,16 @@ def evaluate_sql(generated_sql, correct_sql, query_description):
     result = json.loads(response.choices[0].message.content)
     return result
 
+
+class SQLGeneration(BaseModel):
+    steps: list[str] = Field(..., description="Short chain-of-thought steps explaining the logic")
+    sql_query: str = Field(..., description=get_context() + json.dumps(examples))
+    
+    
 if __name__ == "__main__":
-    setup()
-    query_description = 'What is the correlation between review score and customer city?'
-    answer = answer_question(query_description)
-    answer2 = answer_question('What about by country?')
+    question = "Which seller has delivered the most orders to customers in Rio de Janeiro? [string: seller_id]"
+    answer = answer_question(question)
     print(answer)
-    print(answer2)
     # generated = 'SELECT ROUND((AVG(r.review_score * ov.order_value) - AVG(r.review_score) * AVG(ov.order_value)) / (STDEV(r.review_score) * STDEV(ov.order_value)), 2) AS correlation\nFROM (\n    SELECT order_id, SUM(price + freight_value) AS order_value\n    FROM order_items\n    GROUP BY order_id\n) ov\nJOIN order_reviews r ON ov.order_id = r.order_id;'
     # correct = 'WITH order_values AS (\n    SELECT order_id, SUM(price + freight_value) AS order_value\n    FROM order_items\n    GROUP BY order_id\n)\nSELECT r.review_score,\n       ROUND(AVG(ov.order_value), 2) AS avg_order_value\nFROM order_reviews r\nJOIN order_values ov ON r.order_id = ov.order_id\nGROUP BY r.review_score\nORDER BY r.review_score;'
     # print(data.execute_sql_query(correct))
