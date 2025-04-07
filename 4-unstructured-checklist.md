@@ -4,7 +4,7 @@
 
 In the last lessons, you mastered **structured outputs** with Pydantic and set up basic **evaluations** for an LLM-driven SQL generator. Now we’ll build on those concepts in a new context: extracting structured information from free-form text documents. Think of all the unstructured text your enterprise deals with – emails, reports, resumes – and how much manual effort goes into pulling out key facts. If we can teach an LLM to read a raw resume and produce a well structured summary (name, skills, experience, etc.), we save time and reduce errors for our HR teams.
 
-Your company handles massive volumes of text documents daily. In this lesson, we’ll focus on resumes as our example unstructured documents. You’ll learn how to define a **checklist of fields** (via a Pydantic model) that the LLM must fill in, just like a form. We’ll also explore how to **route prompts** to the correct schema when dealing with different document types (so the model knows which checklist to use), how to handle missing information gracefully, and how to **evaluate** the quality of the extracted data with simple heuristics. By the end, you’ll be able to turn a blob of resume text into a structured object with all the important details – automatically.
+Your company handles massive volumes of text documents daily. In this lesson, we’ll focus on resumes as our example unstructured documents. You’ll learn how to define a **checklist of fields** (via a Pydantic model) that the LLM must fill in, like a paper form. We’ll also explore how to **route prompts** to the correct schema when dealing with different document types (so the model knows which checklist to use), how to handle missing information gracefully, and how to **evaluate** the quality of the extracted data with simple heuristics. By the end, you’ll be able to turn a blob of resume text into a structured object with all the important details – automatically.
 
 ---
 
@@ -92,7 +92,7 @@ If we ran this on Jane’s snippet, the printed JSON might look like:
   "second_name": "Doe",
   "skills": ["Python", "JavaScript", "React", "AWS"],
   "experience_years": 5,
-  "education_level": "Master's",
+  "education_level": "Master",
   "last_job_role": "Senior Developer",
   "salary_expectation": 120000,
   "projects_count": 3
@@ -110,7 +110,7 @@ Real resumes vary widely. Not every candidate will state their **salary expectat
 
 First, because we defined certain fields as `Optional[...] = None` in our Pydantic model, we have implicitly told the model “it’s okay if this is blank.” When using OpenAI’s structured output, the model will know it *can omit* optional fields or set them to null. If a required field (like name or skills) is truly missing from the text, the model might try to infer or it might leave it blank – but since it’s required in the schema, the safer behavior (to avoid a parsing error) is often to output something like an empty string or a placeholder. We can guide this behavior in our instructions.
 
-It’s good practice to **mention in the system prompt how to handle missing data**. For example, we could say: *“If a field is not mentioned, you may output `null` or `"N/A"` for that field.”* This explicitly signals to the model that it shouldn’t hallucinate or make something up just to fill the slot. Instead, a null (or `"N/A"`) is the expected safe output for missing info. The choice between `null` vs `"N/A"` might depend on what your downstream system expects – `null` (JSON null) is nice because it’s clearly not a string of actual data. In our scenario, null is a good choice via the Pydantic schema (since those optional fields default to None).
+It’s good practice to **mention in the system prompt how to handle missing data**. For example, we could say: *“If a field is not mentioned, you may output `null` or `"N/A"` for that field.”* This explicitly signals to the model that it shouldn’t hallucinate or make something up to fill the slot. Instead, a null (or `"N/A"`) is the expected safe output for missing info. The choice between `null` vs `"N/A"` might depend on what your downstream system expects – `null` (JSON null) is nice because it’s clearly not a string of actual data. In our scenario, null is a good choice via the Pydantic schema (since those optional fields default to None).
 
 For example, if a resume has no mention of salary expectations, we’d want:
 
@@ -131,7 +131,7 @@ And if a resume doesn’t list any distinct projects, perhaps `projects_count` w
 
 It’s better to output **null** or a placeholder than to guess. An LLM might be tempted to infer salary from context (“senior engineer in SF, probably $120k+”), but that’s not in the resume – it would be inventing data. Our instructions and schema design should discourage that. The combination of making a field optional and telling the model how to handle missing cases usually does the trick.
 
-Finally, keep an eye on how the model behaves with required fields that are missing. For instance, if the resume text truly never states the candidate’s name (maybe it’s cut off or in an image?), the model might still try to fill the `name` field. In such cases, it could default to something like an empty string or a guess (“Unknown”). There’s no perfect solution if your input is incomplete, but being aware of this helps – you might do a post-check, e.g., if the extracted name is an empty string or not a real name, flag that resume for manual review. In general, though, with resumes we expect these key fields to be present most of the time.
+Finally, keep an eye on how the model behaves with required fields that are missing. For instance, if the resume text truly never states the candidate’s name (maybe it’s cut off or in an image?), the model might still try to fill out the `name` field. In such cases, it could default to something like an empty string or a guess (“Unknown”). There’s no perfect solution if your input is incomplete, but being aware of this helps – you might do a post-check, e.g., if the extracted name is an empty string or not a real name, flag that resume for manual review. In general, though, with resumes we expect these key fields to be present most of the time.
 
 ---
 
@@ -159,7 +159,7 @@ Here’s our eval strategy:
 - Run your LLM extraction pipeline on these resumes.
 - Compare the extracted results with your annotations:
   - For **text fields** like `name` or `education_level`, an exact string match might be too strict due to minor differences (e.g., expected "Master of Science in Computer Science" vs model output "Master’s in Computer Science"). A **soft match** could mean checking that certain keywords or phrases are present. For instance, you could lowercase both and see if one contains the other, or use a similarity metric (Levenshtein distance or token overlap). If the model output is *semantically* the same as the truth, we count it as correct.
-  - For **list fields** like `skills`, you might ignore order and just check that the sets overlap significantly. If your expected skills are ["Python", "React", "AWS"] and the model gives ["Python", "AWS", "React"], that’s a perfect match (order doesn’t matter). If it gives ["Python", "AWS"], missing one, that’s partially correct. If it adds extra irrelevant skills, that’s an error. You can decide on the threshold – maybe you require an exact set match or allow one missing/extra within reason.
+  - For **list fields** like `skills`, you might ignore order and check that the sets overlap significantly. If your expected skills are ["Python", "React", "AWS"] and the model gives ["Python", "AWS", "React"], that’s a perfect match (order doesn’t matter). If it gives ["Python", "AWS"], missing one, that’s partially correct. If it adds extra irrelevant skills, that’s an error. You can decide on the threshold – maybe you require an exact set match or allow one missing/extra within reason.
   - For **numeric fields** like `years_experience` or `projects_count`, it’s usually clearer: 5 vs 5 is a match. But consider cases like a resume says "5+ years" and you expected 5 while the model returned 6 (maybe it interpreted “5+” as 6). Is that wrong? Arguably, yes, since the resume didn’t explicitly say 6. But if a resume says "3-4 years experience" and the model outputs 4, it chose the upper bound. You might still mark that as correct, or at least not far off. Decide on a rule (e.g., if the number is within the range mentioned, count as correct).
   - For **fields that were missing in the truth and supposed to be null**, check the model indeed gave you null or "N/A". If your ground truth for salary was null and the model hallucinated a number, that’s a false positive extraction – you should count that as an error.
 
@@ -170,7 +170,7 @@ Here’s our eval strategy:
 
 **Step 3 – Analysis and Improvement:**
 
-Just like any LLM task, use the insights from eval to improve your prompt or schema. If you notice the model often misunderstands the education level (maybe confusing diploma vs bachelor), consider tweaking the description for that field or adding an example in the system message. If it’s skipping certain skills, maybe those resumes had skills in a tricky format (like a comma-separated paragraph) that you could call out in the prompt (e.g., "skills may be listed in a comma-separated line, make sure to capture all of them").
+Like with any LLM task, use the insights from eval to improve your prompt or schema. If you notice the model often misunderstands the education level (maybe confusing diploma vs bachelor), consider tweaking the description for that field or adding an example in the system message. If it’s skipping certain skills, maybe those resumes had skills in a tricky format (like a comma-separated paragraph) that you could call out in the prompt (e.g., "skills may be listed in a comma-separated line, make sure to capture all of them").
 
 Remember, our evaluation at this stage is relatively simple and mostly manual or heuristic. In a production scenario, you might develop a more sophisticated eval harness, but the principle is the same as what we did for SQL: start with a small, representative test set and gradually expand. Each time you adjust your extraction prompt or upgrade the model, you can rerun this eval set to see if things improved or if any new mistakes popped up.
 
@@ -180,7 +180,7 @@ This iterative improvement ensures reliable, real-world performance.
 
 ### Extending to Other Document Types (Routing Prompt)
 
-In real-world applications, you might not deal with resumes only. Perhaps you have multiple types of documents: resumes, job descriptions, cover letters, client profiles, etc. Each type of document would have its own schema or checklist of fields to extract. We need the system to **automatically pick the right schema** based on the document content – this is where **routing prompts** come in.
+In real-world applications, you might not only deal with resumes. Perhaps you have multiple types of documents: resumes, job descriptions, cover letters, client profiles, etc. Each type of document would have its own schema or checklist of fields to extract. We need the system to **automatically pick the right schema** based on the document content – this is where **routing prompts** come in.
 
 A routing prompt is essentially a small precursor step (or a clever instruction) that guides the model on *which* extraction format to use. There are a couple of ways to implement routing:
 
@@ -223,7 +223,7 @@ In this pseudo-code, we used a first prompt **route to the correct checklist** t
 For our lesson focus, we’ll assume we’re dealing with resumes, so the routing is simple. But it’s good to know how you’d extend this idea. In a large enterprise setting, having a “document router” is very powerful – it’s like having an AI switchboard that ensures the right processing is applied to the right document without manual intervention.
 
 > [!CAUTION]  
-> **Be Clear on Document Type:** If you skip a routing step and just always assume, say, a resume format, the model might get confused when the input diverges from expectations. For example, feeding a job description into a resume extractor could yield nonsense or very incomplete data. Always either route explicitly (via code or a classification prompt) or include clear indicators in your system message about what type of document to expect. This will save you from bizarre outputs or hallucinated fields.
+> **Be Clear on Document Type:** If you skip a routing step and simply assume, say, a resume format, the model might get confused when the input diverges from expectations. For example, feeding a job description into a resume extractor could yield nonsense or very incomplete data. Always either route explicitly (via code or a classification prompt) or include clear indicators in your system message about what type of document to expect. This will save you from bizarre outputs or hallucinated fields.
 
 ---
 
@@ -251,7 +251,7 @@ Now it’s your turn to apply these ideas. In this assignment, you’ll build a 
 - **Accurate Extraction:** Aim to correctly extract the majority of the fields for each resume in your test set. It’s okay if not 100% perfect (some resumes are tricky), but you want to see solid performance, especially on clearly stated fields like name or skills.
 - **Robust to Variations:** Ensure your pipeline works on different resume styles. Maybe one resume lists skills in a bullet list, another in a paragraph; one has “M.Sc. in Computer Science” while another says “Master of Science (Computer Science)”. Your model should handle these variations – thanks to the power of the LLM and your field descriptions.
 - **Graceful Handling of Missing Info:** Verify that when a resume truly lacks a piece of data, your system doesn’t break. The output should have `null` or a sensible placeholder for missing fields, and your evaluation should count that as **correct** (because that’s the correct behavior).
-- **Evaluation Mindset:** Get comfortable with the idea of evaluating LLM outputs that aren’t just a single number or answer. You’re effectively writing test cases for a more complex output. This exercise should highlight the importance of well-chosen test examples and clear criteria for what counts as a correct extraction.
+- **Evaluation Mindset:** Get comfortable with the idea of evaluating LLM outputs that aren’t a single number or answer. You’re effectively writing test cases for a more complex output. This exercise should highlight the importance of well-chosen test examples and clear criteria for what counts as a correct extraction.
 
 By completing this assignment, you will have built a mini "resume parser" powered by an LLM – a task that traditionally might require painstaking rule-based NLP or keyword searches. Even more, you’ll have a sense of how to evaluate and iteratively improve such a system, which is exactly the skill you need to tackle real business documents in your day-to-day work.
 
