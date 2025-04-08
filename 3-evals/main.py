@@ -2,10 +2,16 @@ import json
 from pathlib import Path
 from pydantic import BaseModel, Field
 import logging
+import sys
+
+# Add the parent directory of "2-structured-output" to sys.path
+sys.path.append(str(Path(__file__).resolve().parent.parent / "2-structured-output"))
+
+# Now import the module
+from sample_db_queries import examples
 
 from db_client import Olist
 from llm_client import LLMClient
-from sample_db_queries import examples
 
 llm_client = LLMClient()
 
@@ -68,7 +74,12 @@ def get_examples():
     return output
 
 def answer_question(question):
-    setup()
+    try: 
+        assert data.connected
+    except NameError:
+        logger.info("Setting up the database connection")
+        setup()
+    
     response = completion(build_prompt(question))
     parsed_json = response.choices[0].message.parsed
     try:
@@ -77,11 +88,19 @@ def answer_question(question):
             logger.warning(f"Query returned an empty result set")
             raise ValueError("Query returned an empty result set")
         return answer
+    except ValueError as e:
+        logger.error(f"Query failed: {e}")
+        answer = "Sorry, I'm afriad I cant't do that."
     except Exception as e:
         logger.info(f"Trying to recover by generating a fix for the query causing an error")
         improved_sql = generate_fix(e, parsed_json.sql_query, question)
-        return data.execute_sql_query(improved_sql.choices[0].message.parsed.sql_query, iteration=1)
-    
+        try:
+            answer = data.execute_sql_query(improved_sql.choices[0].message.parsed.sql_query, iteration=1)
+        except ValueError as e:
+            logger.error(f"Query failed again: {e}")
+            answer = "Sorry, I'm afriad I cant't do that."
+    return answer
+
 def evaluate_sql(generated_sql, correct_sql, query_description):
     """Evaluate the generated SQL against the correct SQL using an LLM"""
     eval_prompt = f"""
