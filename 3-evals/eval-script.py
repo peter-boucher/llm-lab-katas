@@ -10,23 +10,19 @@ class bcolors:
 
 for test in eval_qna:
     question = test['question']
-    # expected_answer = test['expected_answer']
+    expected_answer = test['expected_answer']
 
     try:
         answer = answer_question(question)
         # print(answer.to_string(index=False))
-        try:
-            expected_answer = test['expected_answer']
-            if isinstance(answer, str):
-                if answer == expected_answer:
-                    print(f"{bcolors.OKGREEN}[/] Eval passed for question: '{question}'")
-                else:
-                    print(f"{bcolors.FAIL}[/] Eval failed for question: '{question}'. Expected: {expected_answer}, got: {answer}")
-            else:
-                pandas.testing.assert_frame_equal(answer, expected_answer)
+        if isinstance(answer, str):
+            if answer == expected_answer:
                 print(f"{bcolors.OKGREEN}[/] Eval passed for question: '{question}'")
-        except KeyError:
-            pass
+            else:
+                print(f"{bcolors.FAIL}[/] Eval failed for question: '{question}'. Expected: {expected_answer}, got: {answer}")
+        else:
+            pandas.testing.assert_frame_equal(answer, expected_answer)
+            print(f"{bcolors.OKGREEN}[/] Eval passed for question: '{question}'")
     except ValueError as e:
         if str(e) == test['expected_exception']:
             print(f"{bcolors.OKGREEN}[/] Eval passed for question: '{question}'")
